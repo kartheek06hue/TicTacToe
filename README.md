@@ -33,4 +33,4 @@ A simple, interactive two-player Tic Tac Toe game built with HTML, CSS, and Java
 
 ## Live Demo
 
-[https://gnani31.github.io/TicTacToe/]
+[https://kartheek06hue.github.io/TicTacToe/]
