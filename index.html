@@ -7,9 +7,9 @@
     <link rel="stylesheet" href="./style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Lexend+Deca:wght@100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Rubik+Wet+Paint&family=Sixtyfour&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Lexend+Deca:wght@100..900&family=Orbitron:wght@400..900&family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-glass">
     <div id="main_container">
         <h1>TIC-TAC-TOE</h1>
         
@@ -19,11 +19,27 @@
             <button id="btn-2p" class="mode-btn active">2 Players (Local)</button>
         </div>
 
+        <!-- Bot Speech Bubble -->
+        <div id="bot-dialogue" class="speech-bubble" style="display: none;">
+            "Ready to test your skill?"
+        </div>
+
         <div class="options-row">
+            <!-- Theme Selection -->
+            <div class="option-item">
+                <label for="theme-select">Theme: </label>
+                <select id="theme-select">
+                    <option value="theme-glass" selected>Glassmorphism</option>
+                    <option value="theme-cyberpunk">Cyberpunk Neon</option>
+                    <option value="theme-arcade">Retro Arcade</option>
+                    <option value="theme-minimal">Monochrome Minimal</option>
+                </select>
+            </div>
+
             <!-- Difficulty Selection -->
-            <div id="difficulty-selection" style="display: none;">
-                <label for="difficulty" style="font-size: 16px;">Bot Difficulty: </label>
-                <select id="difficulty" style="padding: 5px; border-radius: 5px; font-family: 'Jua', serif; font-size: 14px; cursor: pointer;">
+            <div id="difficulty-selection" class="option-item" style="display: none;">
+                <label for="difficulty">Bot Difficulty: </label>
+                <select id="difficulty">
                     <option value="0">Novice</option>
                     <option value="0.25">Apprentice</option>
                     <option value="0.5">Intermediate</option>
@@ -33,8 +49,8 @@
             </div>
 
             <!-- Speed Mode Toggle -->
-            <div id="speed-mode-toggle">
-                <label style="font-size: 16px; cursor: pointer;">
+            <div id="speed-mode-toggle" class="option-item">
+                <label style="cursor: pointer;">
                     <input type="checkbox" id="speed-checkbox"> Speed Mode (5s)
                 </label>
             </div>
@@ -50,6 +66,7 @@
         <!-- Timer Display -->
         <div id="timer-display" style="display: none;">Time Left: <span id="time-left">5</span>s</div>
 
+        <!-- Game Grid -->
         <div id="container">
             <div class="card" id="0"></div>
             <div class="card" id="1"></div>
@@ -62,7 +79,11 @@
             <div class="card" id="8"></div>
         </div>
         
-        <div id="restart">RESTART</div>
+        <!-- Controls -->
+        <div class="action-buttons">
+            <div id="restart">RESTART</div>
+            <button id="hint-btn">💡 HINT</button>
+        </div>
         <div id="announce"></div>
     </div>
     
