@@ -19,17 +19,36 @@
             <button id="btn-2p" class="mode-btn active">2 Players (Local)</button>
         </div>
 
-        <!-- Difficulty Selection -->
-        <div id="difficulty-selection" style="display: none; margin-bottom: 15px;">
-            <label for="difficulty" style="font-size: 18px;">Bot Difficulty: </label>
-            <select id="difficulty" style="padding: 5px; border-radius: 5px; font-family: 'Jua', serif; font-size: 16px; cursor: pointer;">
-                <option value="0">Novice</option>
-                <option value="0.25">Apprentice</option>
-                <option value="0.5">Intermediate</option>
-                <option value="0.75">Advanced</option>
-                <option value="1" selected>Expert</option>
-            </select>
+        <div class="options-row">
+            <!-- Difficulty Selection -->
+            <div id="difficulty-selection" style="display: none;">
+                <label for="difficulty" style="font-size: 16px;">Bot Difficulty: </label>
+                <select id="difficulty" style="padding: 5px; border-radius: 5px; font-family: 'Jua', serif; font-size: 14px; cursor: pointer;">
+                    <option value="0">Novice</option>
+                    <option value="0.25">Apprentice</option>
+                    <option value="0.5">Intermediate</option>
+                    <option value="0.75">Advanced</option>
+                    <option value="1" selected>Expert</option>
+                </select>
+            </div>
+
+            <!-- Speed Mode Toggle -->
+            <div id="speed-mode-toggle">
+                <label style="font-size: 16px; cursor: pointer;">
+                    <input type="checkbox" id="speed-checkbox"> Speed Mode (5s)
+                </label>
+            </div>
         </div>
+
+        <!-- Scoreboard -->
+        <div id="scoreboard">
+            <div class="score-box"><span id="score-X">0</span><br>Player X</div>
+            <div class="score-box"><span id="score-ties">0</span><br>Ties</div>
+            <div class="score-box"><span id="score-O">0</span><br>Player O</div>
+        </div>
+
+        <!-- Timer Display -->
+        <div id="timer-display" style="display: none;">Time Left: <span id="time-left">5</span>s</div>
 
         <div id="container">
             <div class="card" id="0"></div>
