@@ -4,7 +4,7 @@ let turns = 0;
 let board_array = new Array(9).fill('E');
 const winner = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-// --- NEW STATE VARIABLES ---
+// --- STATE VARIABLES ---
 let isSinglePlayer = false; 
 let isComputerThinking = false; 
 let isGameOver = false;
@@ -19,10 +19,104 @@ let isSpeedMode = false;
 let timerInterval;
 let timeLeft = 5;
 
+// Elements
 const difficultySelect = document.getElementById('difficulty-selection'); 
 const speedCheckbox = document.getElementById('speed-checkbox');
+const themeSelect = document.getElementById('theme-select');
+const botDialogue = document.getElementById('bot-dialogue');
+const hintBtn = document.getElementById('hint-btn');
 
-// --- EVENT LISTENERS: MODES & OPTIONS ---
+// --- WEB AUDIO SYNTHESIZER ---
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new AudioCtx();
+    }
+}
+
+function playSound(type) {
+    try {
+        initAudio();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'move') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime( turn === 'X' ? 440 : 554.37, now ); // A4 or C#5
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        } else if (type === 'tick') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, now);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.start(now);
+            osc.stop(now + 0.05);
+        } else if (type === 'win') {
+            // Major triad arpeggio
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, index) => {
+                const noteOsc = audioCtx.createOscillator();
+                const noteGain = audioCtx.createGain();
+                noteOsc.connect(noteGain);
+                noteGain.connect(audioCtx.destination);
+                noteOsc.frequency.setValueAtTime(freq, now + index * 0.08);
+                noteGain.gain.setValueAtTime(0.1, now + index * 0.08);
+                noteGain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.2);
+                noteOsc.start(now + index * 0.08);
+                noteOsc.stop(now + index * 0.08 + 0.2);
+            });
+        } else if (type === 'lose') {
+            // Descending tone
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.4);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+    } catch (e) {
+        // Audio fallback if browser blocks autoplay
+    }
+}
+
+// --- BOT PERSONALITY DIALOGUE ---
+const botTaunts = {
+    start: ["Let's see what you've got!", "Prepared to lose?", "Good luck, human!"],
+    move: ["Bold choice...", "Interesting strategy.", "I saw that coming.", "Is that your best move?"],
+    block: ["Nice try!", "Not on my watch!", "Blocked!"],
+    win: ["Calculated victory!", "Human error detected.", "Better luck next time!"],
+    lose: ["Impossible... A glitch in my matrix!", "You got lucky!", "Rematch immediately!"],
+    tie: ["A tie? Impressive defense.", "Equally matched... for now.", "Neither of us wins!"]
+};
+
+function triggerBotSpeech(category) {
+    if (!isSinglePlayer) return;
+    const lines = botTaunts[category];
+    if (lines) {
+        const randomLine = lines[Math.floor(Math.random() * lines.length)];
+        botDialogue.innerText = `"${randomLine}"`;
+    }
+}
+
+// --- THEME SWITCHER ---
+themeSelect.addEventListener('change', (e) => {
+    document.body.className = e.target.value;
+});
+
+// --- GAME MODE SELECTION ---
 const btn1p = document.getElementById('btn-1p');
 const btn2p = document.getElementById('btn-2p');
 
@@ -30,7 +124,9 @@ btn1p.addEventListener('click', () => {
     isSinglePlayer = true;
     btn1p.classList.add('active');
     btn2p.classList.remove('active');
-    difficultySelect.style.display = 'block'; 
+    difficultySelect.style.display = 'flex'; 
+    botDialogue.style.display = 'block';
+    triggerBotSpeech('start');
     restartGame();
 });
 
@@ -39,6 +135,7 @@ btn2p.addEventListener('click', () => {
     btn2p.classList.add('active');
     btn1p.classList.remove('active');
     difficultySelect.style.display = 'none'; 
+    botDialogue.style.display = 'none';
     restartGame();
 });
 
@@ -52,10 +149,13 @@ speedCheckbox.addEventListener('change', (e) => {
 const handleMove = (element) => {
     if(board_array[element.id] === 'E' && !isGameOver) {
 
+        clearHints();
+        playSound('move');
+
         element.innerText = turn;
         board_array[element.id] = turn;
         element.classList.add(turn);
-        element.classList.add('pop'); // Trigger animation
+        element.classList.add('pop'); 
         
         turns++; 
 
@@ -63,13 +163,11 @@ const handleMove = (element) => {
 
         if (!isGameOver) {
             turn = (turn === 'X') ? 'O' : 'X';
-            
-            // Reset and start timer for next player
             startTimer();
 
-            // Trigger Bot if applicable
             if (isSinglePlayer && turn === 'O') {
                 isComputerThinking = true;
+                triggerBotSpeech('move');
                 setTimeout(makeComputerMove, 500); 
             } else {
                 isComputerThinking = false;
@@ -99,26 +197,50 @@ function endGame(result, winningIndices) {
         document.getElementById('announce').innerText = 'Tie Game!';
         scoreTies++;
         document.getElementById('score-ties').innerText = scoreTies;
+        playSound('tick');
+        triggerBotSpeech('tie');
     } else {
         document.getElementById('announce').innerText = `Player ${result} is Winner!`;
         
-        // Highlight winning cards
         if (winningIndices) {
             document.getElementById(`${winningIndices[0]}`).classList.add('winning-card');
             document.getElementById(`${winningIndices[1]}`).classList.add('winning-card');
             document.getElementById(`${winningIndices[2]}`).classList.add('winning-card');
         }
 
-        // Update Scores
         if (result === 'X') {
             scoreX++;
             document.getElementById('score-X').innerText = scoreX;
+            playSound('win');
+            triggerBotSpeech('lose');
         } else {
             scoreO++;
             document.getElementById('score-O').innerText = scoreO;
+            playSound(isSinglePlayer ? 'lose' : 'win');
+            triggerBotSpeech('win');
         }
     }
 }
+
+// --- INTERACTIVE HINT SYSTEM ---
+function clearHints() {
+    for (let i = 0; i < 9; i++) {
+        document.getElementById(`${i}`).classList.remove('hint-card');
+    }
+}
+
+hintBtn.addEventListener('click', () => {
+    if (isGameOver || isComputerThinking) return;
+
+    clearHints();
+    let bestSpot = minimax(board_array, turn).index;
+    if (bestSpot !== undefined && bestSpot !== null) {
+        document.getElementById(`${bestSpot}`).classList.add('hint-card');
+        if (isSinglePlayer) {
+            botDialogue.innerText = '"Need a hint? Fine, take a look!"';
+        }
+    }
+});
 
 // --- TIMER LOGIC ---
 function startTimer() {
@@ -129,15 +251,16 @@ function startTimer() {
     document.getElementById('time-left').innerText = timeLeft;
     
     timerInterval = setInterval(() => {
-        if (isComputerThinking) return; // Pause timer while bot thinks
+        if (isComputerThinking) return;
         
         timeLeft--;
         document.getElementById('time-left').innerText = timeLeft;
+        playSound('tick');
         
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            let winningPlayer = (turn === 'X') ? 'O' : 'X'; // The player who ran out of time loses
-            document.getElementById('announce').innerText = `Time's Up! Player ${winningPlayer} Wins by default.`;
+            let winningPlayer = (turn === 'X') ? 'O' : 'X';
+            document.getElementById('announce').innerText = `Time's Up! Player ${winningPlayer} Wins.`;
             endGame(winningPlayer, null);
         }
     }, 1000);
@@ -168,7 +291,7 @@ function makeComputerMove() {
     handleMove(chosenElement);
 }
 
-// Helper function for Minimax
+// Minimax Helper
 function checkWinForAlgorithm(board, player) {
     for (let i = 0; i < winner.length; i++) {
         const [a, b, c] = winner[i];
@@ -250,7 +373,7 @@ function restartGame() {
     for(let i = 0; i < 9; i++) {
         const card = document.getElementById(`${i}`);
         card.innerText = "";
-        card.classList.remove('X', 'O', 'pop', 'winning-card');
+        card.classList.remove('X', 'O', 'pop', 'winning-card', 'hint-card');
     }
     document.getElementById('announce').innerText = '';
     
@@ -262,7 +385,11 @@ function restartGame() {
     container.removeEventListener('click', call_back);
     container.addEventListener('click', call_back);
 
-    startTimer(); // Reset timer if Speed Mode is on
+    if (isSinglePlayer) {
+        triggerBotSpeech('start');
+    }
+
+    startTimer();
 }
 
 const restartBtn = document.getElementById('restart');
