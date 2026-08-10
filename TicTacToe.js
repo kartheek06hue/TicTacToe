@@ -7,6 +7,7 @@ const winner = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
 // --- NEW STATE VARIABLES ---
 let isSinglePlayer = false; 
 let isComputerThinking = false; 
+const difficultySelect = document.getElementById('difficulty-selection'); 
 
 // --- GAME MODE SELECTION ---
 const btn1p = document.getElementById('btn-1p');
@@ -16,6 +17,7 @@ btn1p.addEventListener('click', () => {
     isSinglePlayer = true;
     btn1p.classList.add('active');
     btn2p.classList.remove('active');
+    difficultySelect.style.display = 'block'; // Show difficulty options
     restartGame();
 });
 
@@ -23,6 +25,7 @@ btn2p.addEventListener('click', () => {
     isSinglePlayer = false;
     btn2p.classList.add('active');
     btn1p.classList.remove('active');
+    difficultySelect.style.display = 'none'; // Hide difficulty options
     restartGame();
 });
 
@@ -61,10 +64,33 @@ const handleMove = (element) => {
     }
 }
 
-// --- COMPUTER BOT (LEVEL 2: UNBEATABLE MINIMAX) ---
+// --- COMPUTER BOT LOGIC (5 LEVELS) ---
 function makeComputerMove() {
-    let bestSpot = minimax(board_array, 'O').index;
-    let chosenElement = document.getElementById(`${bestSpot}`);
+    let emptyCells = [];
+    for (let i = 0; i < board_array.length; i++) {
+        if (board_array[i] === 'E') emptyCells.push(i);
+    }
+    if (emptyCells.length === 0) return;
+
+    let chosenCellId;
+    
+    // Get the probability value from the dropdown
+    let perfectPlayProbability = parseFloat(document.getElementById('difficulty').value);
+    
+    // Generate a random number between 0 and 1
+    let randomRoll = Math.random(); 
+
+    // If the random roll falls within our probability, play perfectly
+    if (randomRoll < perfectPlayProbability) {
+        chosenCellId = minimax(board_array, 'O').index;
+    } 
+    // Otherwise, pick a random empty cell
+    else {
+        let randomIndex = Math.floor(Math.random() * emptyCells.length);
+        chosenCellId = emptyCells[randomIndex];
+    }
+
+    let chosenElement = document.getElementById(`${chosenCellId}`);
     handleMove(chosenElement);
 }
 
